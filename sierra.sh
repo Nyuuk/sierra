@@ -201,7 +201,7 @@ _ROUT(){
   if [ -z "$(grep route $_CONFIG)" ]; then
     echo -e "route=no">>$_CONFIG
    fi
-  _TOTAL=$(grep server $_CONFIG|awk -F '=' 'print $1')
+  _TOTAL=$(grep server $_CONFIG|awk -F '=' '{print $1}')
   _TOTALNum=$(grep -n 'server' $_CONFIG|awk -F ':' '{print $1}')
   case $ke2 in
     menu)
@@ -257,7 +257,7 @@ _ROUT(){
        fi
       Ip=$(ifconfig wwan0|grep 'inet addr'|awk -F 'addr:' '{print $2}'|awk '{print $1}')
       for _LOOP in $_TOTAL; do
-        _ipServer=$(grep $_LOOP $_CONFIG|awk -F '=' 'print $2')
+        _ipServer=$(grep $_LOOP $_CONFIG|awk -F '=' '{print $2}')
         echo -en "Add route $_LOOP $_ipServer "
         _cek=$(ip route|grep "$_ipServer via $Ip")
         for i in 1 2; do
