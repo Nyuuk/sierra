@@ -203,27 +203,27 @@ _ROUT(){
    fi
   _TOTAL=$(grep server $_CONFIG|awk -F '=' '{print $1}')
   _TOTALNum=$(grep -n 'server' $_CONFIG|awk -F ':' '{print $1}')
-  case $ke2 in
+  case $_ke2 in
     menu)
       echo -e "1. Set routing (true/false)"
       echo -e "2. Set Ip Server routing"
       read -p "Input number : " _pilNum
       case $_pilNum in
       1)
-        read -p "Routing server VPN ? (default true/yes) [yes/NO]" _pil
         for (( ; ; )); do
+        read -p "Routing server VPN ? (default true/yes) [yes/NO]" _pil
         if [[ "$_pil" == "YES" || "$_pil" == "yes" ]]; then
-            sed -si "s/route=no/route=yes/g" $_CONFIG;break
+            sed -i "s/route=no/route=yes/g" $_CONFIG;break
         elif [[ "$_pil" == "NO" || "$_pil" == "no" ]]; then
-            sed -si "s/route=yes/route=no/g" $_CONFIG;break
+            sed -i "s/route=yes/route=no/g" $_CONFIG;break
         elif [ -z "$_pil" ]; then
-            sed -si "s/route=no/route=yes/g" $_CONFIG; break
+            sed -i "s/route=no/route=yes/g" $_CONFIG; break
         else
             echo -e "Mohon masukan dengan benar"
         fi
         sleep 1; clear
         done
-        /root/sierra rout menu
+        $0 rout menu
       ;;
       2)
         if [ -z "$(grep server $_CONFIG)" ]; then
@@ -253,19 +253,24 @@ _ROUT(){
         clear
         echo -e "Please add Ip Server for Routing"
         echo -e "$0 rout menu"
-        sed -si "s/route=yes/route=no/g" $_CONFIG; exit
+        sed -i "s/route=yes/route=no/g" $_CONFIG; exit
        fi
-      Ip=$(ifconfig wwan0|grep 'inet addr'|awk -F 'addr:' '{print $2}'|awk '{print $1}')
+      Ip=$(ifconfig wwan0|grep 'inet addr'|cut -d ':' -f 2|cut -d ' ' -f 1)
       for _LOOP in $_TOTAL; do
         _ipServer=$(grep $_LOOP $_CONFIG|awk -F '=' '{print $2}')
-        echo -en "Add route $_LOOP $_ipServer "
         _cek=$(ip route|grep "$_ipServer via $Ip")
         for i in 1 2; do
           if [ -z "$(ip route|grep $_ipServer)" ]; then
-          ip route add $_ipServer via $Ip $>/dev/null
+          ip route add $_ipServer via $Ip
+          echo -en "Add route $_ipServer via $Ip "
+	  sleep 1
+	  if [ -n "$_cek*" ]; then
           echo -e "${G}SUCCES$AK"
-          elif [ -n "$_cek" ]; then
-          echo -e "${G}SUCCES$AK"
+	  else
+          echo -e "${G}FAIL$AK"
+	  fi
+          elif [ -n "$_cek*" ]; then
+          echo -e "${G}Already Available$AK"
           else
           echo -e "${R}FAIL$AK"
           ip route |grep $_ipServer
