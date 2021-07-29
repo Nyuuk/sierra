@@ -1,5 +1,6 @@
 #!/bin/bash
 modem='/dev/ttyUSB2'
+_CONFIG='/etc/config/sierra'
 R='\e[31;1m' #RED
 G='\e[32;1m' #GREEN
 ak='\e[0m'
@@ -13,7 +14,6 @@ APN(){
 STATUS(){
 	echo -e 'AT&V'|atinout - $modem -
 	}
-
 
 START(){
 for (( ; ; )); do
@@ -36,7 +36,6 @@ sleep 2
 done
 }
 
-
 CONNECTION(){
 	for (( ; ; )); do
 	if [[ -n "$(lsusb | grep sierra)" || -n "$(lsusb | grep Airprime)" ]];then 
@@ -55,6 +54,7 @@ CONNECTION(){
 	sleep 1
 	done
 	}
+	
 AUTO(){
 	for (( ; ; )); do
 	ceksi=$(lsusb|grep Sierra)
@@ -72,6 +72,7 @@ AUTO(){
 	sleep 2
 	done
 }
+
 STOP(){
 AT=$(echo -e 'AT!SCACT=0,1'|atinout - $modem -|awk NR==2)
 if [[ "$AT" = "OK"* ]]; then
@@ -80,6 +81,7 @@ else
 	echo -e "Modem$R Gagal$ak Disconnect"
 fi
 }
+
 RESET(){
 for (( ; ; )); do
 AT=$(echo -e 'AT!RESET'|atinout - $modem -|awk NR==4)
@@ -92,6 +94,7 @@ fi
 sleep 2
 done
 }
+
 CUSTOM(){
 echo -e $Cus
 echo -e $Cus|atinout - $modem -
@@ -122,6 +125,7 @@ ENABLED(){
 		echo -e "AutoStart Is enable"
 	fi
 }
+
 Note(){
 	clear
 	TOTAL=$(grep -n '' /root/ip.txt|awk -F ':' '{print $1}')
@@ -188,7 +192,45 @@ LTE(){
 	CONNECTION
 	}
 
+_ROUT(){
+#  if [ -z "$(grep route $_CONFIG)" ]; then
+  case $3 in
+    menu)
+      read -p "Routing server VPN ? (default yes) [yes/NO]" _pil
+      case $_pil in
+        yes|YES)
+          echo -e "route=yes" > $_CONFIG
+          ;;
+        no|NO)
+          echo -e "route=no" > $_CONFIG
+          ;;
+        *)
+          echo -e "route=yes" > $_CONFIG
+          ;;
+      esac
+    ;;
+  esac
+#  fi
+  _CEK=$(grep route $_CONFIG|awk -F '=' 'print $2')
+  case $_CEK in
+    yes)
+      if [ -z "$(grep server $_CONFIG)" ];then
+        clear
+        echo -e "Please add Ip Server for Routing"
+        echo -e "$0 rout menu"; exit
+       fi
+      Ip=$(ifconfig wwan0|grep 'inet addr'|awk -F 'addr:' '{print $2}'|awk '{print $1}')
+      _TOTAL=$(grep server $_CONFIG|awk -F '=' 'print $1')
+      for _LOOP in $_TOTAL; do
+        _routeserver=$(grep $_TOTAL $_CONFIG|awk -F '=' 'print $2')
+      done
+    ;;
+   esac
+}
 case $1 in
+rout)
+  _ROUT;exit
+  ;;
 lte)
 	LTE;exit
 	;;
