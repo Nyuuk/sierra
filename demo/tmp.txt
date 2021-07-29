@@ -1,3 +1,0 @@
-server1=1111
-server2=2222
-server10=111
