@@ -4,6 +4,7 @@ _CONFIG='/etc/config/sierra'
 R='\e[31;1m' #RED
 G='\e[32;1m' #GREEN
 ak='\e[0m'
+AK='\e[0m'
 Cus=$2
 _ke2=$2
 INTER='wwan0'
@@ -193,8 +194,15 @@ LTE(){
 	CONNECTION
 	}
 
+_LISTROUT(){
+  _TOTAL=$(grep server $_CONFIG|awk -F '=' '{print $1}')
+  _TOTALNam=$(grep 'server' $_CONFIG|cut -b 7- -|cut -d '=' -f 1 -)
+  for _LOOP in $_TOTAL; do
+    echo -e "$_LOOP > $(grep $_LOOP $_CONFIG|awk -F '=' '{print $2}'|awk NR==1)"
+  done
+}
+
 _ROUT(){
-  clear
   if [ -z "$(ls $_CONFIG)" ]; then
     touch $_CONFIG
   fi
@@ -205,6 +213,12 @@ _ROUT(){
   _TOTALNum=$(grep -n 'server' $_CONFIG|awk -F ':' '{print $1}')
   case $_ke2 in
     menu)
+	clear
+      if [[ "$(grep route $_CONFIG|cut -d "=" -f 2 -)" == "yes" ]]; then
+      echo -e "routing ${G}ENABLED$AK"
+      else
+      echo -e "routing ${R}DISABLED$AK"
+      fi
       echo -e "1. Set routing (true/false)"
       echo -e "2. Set Ip Server routing"
       read -p "Input number : " _pilNum
@@ -212,7 +226,7 @@ _ROUT(){
       1)
         for (( ; ; )); do
         read -p "Routing server VPN ? (default true/yes) [yes/NO]" _pil
-        if [[ "$_pil" == "YES" || "$_pil" == "yes" ]]; then
+        if [[ "$_pil" == "YES" || "$_pil" == "yes" || "$_pil" == "y" ]]; then
             sed -i "s/route=no/route=yes/g" $_CONFIG;break
         elif [[ "$_pil" == "NO" || "$_pil" == "no" ]]; then
             sed -i "s/route=yes/route=no/g" $_CONFIG;break
@@ -226,18 +240,19 @@ _ROUT(){
         $0 rout menu
       ;;
       2)
+        _LISTROUT
         if [ -z "$(grep server $_CONFIG)" ]; then
           read -p "Input Ip server : " _ipServer
           echo -e "server1=$_ipServer">>$_CONFIG; exit
          fi
-        for _LOOP in $_TOTALNum; do 
-          echo -e "$_LOOP. server$_LOOP > $(grep server$_LOOP $_CONFIG|awk -F '=' '{print $2}')"
-          done
         read -p "Add new server VPN ? (yes/No) " _pil
-        if [[ "$_pil" == "yes" || "$_pil" == "YES" ]]; then
+        if [[ "$_pil" == "yes" || "$_pil" == "YES" || "$_pil" == "y" ]]; then
         clear;read -p "Ip Server : " _ipServer
-        let _str=1+$(cut -b 7- $_CONFIG|cut -d "=" -f 1 -)
-        echo -e "server$_str=$_ipServer">>$_CONFIG
+	_CEKTOT=$(cat $_CONFIG|wc -l)
+	_CEKLAST=$(cut -b 7- $_CONFIG|cut -d "=" -f 1 -|awk NR==$_CEKTOT)
+        let _str=1+$_CEKLAST
+	echo -e "$_CEKLAST"
+	echo -e "server$_str=$_ipServer">>$_CONFIG
         echo -e "Added server$_str $_ipServer";exit
         else
         echo "exited";exit
@@ -316,7 +331,7 @@ res)
 	for (( ; ; )); do \
 	cek=$(ifconfig|grep wwan0|awk '{print$1}')
 	if [[ "$cek" == "wwan0"* ]]; then
-	CONNECTION;exit
+	CONNECTION;_ROUT;exit
 	break
 	fi
 	done
