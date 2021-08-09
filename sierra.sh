@@ -185,7 +185,7 @@ CATAT(){
 }
 
 stat_apn(){
-        /root/sierra cus 'AT+CGDCONT?'
+        $0 cus 'AT+CGDCONT?'
 }
 
 LTE(){
