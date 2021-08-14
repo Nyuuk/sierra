@@ -1,6 +1,7 @@
 #!/bin/bash
 modem='/dev/ttyUSB2'
 _CONFIG='/etc/config/sierra'
+_SIERRA='\/root\/sierra\/sierra.sh'
 R='\e[31;1m' #RED
 G='\e[32;1m' #GREEN
 ak='\e[0m'
@@ -59,7 +60,7 @@ CONNECTION(){
 	
 AUTO(){
 	for (( ; ; )); do
-	ceksi=$(lsusb|grep Sierra)
+	ceksi=$(lsusb -t|grep sierra)
 	if [ -n "$ceksi" ]; then
 	echo -e "Sierra$G Terdeteksi$ak"
 		cekip=$(ifconfig wwan0|grep 'inet addr')
@@ -104,7 +105,7 @@ echo -e $Cus|atinout - $modem -
 
 En(){
 	if [ -z "$(grep sierra /etc/rc.local)" ]; then
-		sed -i "s/$(grep exit /etc/rc.local)/screen -dmS sierra \/root\/sierra auto\nexit 0/g" /etc/rc.local
+		sed -i "s/$(grep exit /etc/rc.local)/screen -dmS sierra $_SIERRA auto\nexit 0/g" /etc/rc.local
 		echo -e "AutoStart Is enable"
 	else
 		echo -e "AutoStart Is enable"
@@ -115,7 +116,7 @@ Dis(){
 	if [ -z "$(grep sierra /etc/rc.local)" ]; then
 		echo -e "AutoStart Is disable"
 	else
-		sed -i "/screen -dmS sierra \/root\/sierra auto/d" /etc/rc.local
+		sed -i "/screen -dmS sierra $_SIERRA auto/d" /etc/rc.local
 		echo -e "Succes disable Autostart"
 	fi
 }
@@ -321,7 +322,7 @@ lte)
 		ENABLED;exit
 		;;
 con)
-	CONNECTION;exit
+	CONNECTION;_ROUT;exit
 	;;
 dis)
 	STOP;exit
