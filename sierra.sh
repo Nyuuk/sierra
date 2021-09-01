@@ -18,16 +18,16 @@ echo -e "$_MOD"|socat - $modem
 }
 
 APN(){
-	echo -e "AT+CGDCONT=1,\"IP\",\"$Cus\""|atinout - $modem -
+	echo -e "AT+CGDCONT=1,\"IP\",\"$Cus\""|socat - $modem
 }
 
 STATUS(){
-	echo -e 'AT&V'|atinout - $modem -
+	echo -e 'AT&V'|socat - $modem
 	}
 
 START(){
 for (( ; ; )); do
-AT=$(echo -e 'AT!SCACT=1,1'|atinout - $modem -|awk NR==2)
+AT=$(echo -e 'AT!SCACT=1,1'|socat - $modem|awk NR==2)
 IP=$(ifconfig $INTER|grep inet)
 if [[ "$AT" = "OK"* ]]; then
 	echo -e "Modem$G Sudah$ak Start"
@@ -48,10 +48,10 @@ done
 
 CONNECTION(){
 	for (( ; ; )); do
-	if [[ -n "$(lsusb | grep sierra)" || -n "$(lsusb | grep Airprime)" ]];then 
+	if [[ -n "$(lsusb | grep Sierra)" || -n "$(lsusb | grep Airprime)" ]];then 
 	if [ -z "$(ifconfig $INTER|grep inet)" ]; then \
 		echo -e "Sierra ${R}Not${ak} Connected"
-		echo -e "AT!SCACT=1,1"|atinout - $modem - &>/dev/null
+		echo -e "AT!SCACT=1,1"|socat - $modem &>/dev/null
 	else
 		echo -e "Sierra ${G}Connected${ak}"
 		echo -e "IP Local : ${G}$(ifconfig $INTER|grep inet|awk NR==1 \
@@ -84,7 +84,7 @@ _AUTO(){
 }
 
 STOP(){
-AT=$(echo -e 'AT!SCACT=0,1'|atinout - $modem -|awk NR==2)
+AT=$(echo -e 'AT!SCACT=0,1'|socat - $modem|awk NR==2)
 if [[ "$AT" = "OK"* ]]; then
 	echo -e "Modem$G Disconnect$ak"
 else
@@ -94,7 +94,7 @@ fi
 
 RESET(){
 for (( ; ; )); do
-AT=$(echo -e 'AT!RESET'|atinout - $modem -|awk NR==4)
+AT=$(echo -e 'AT!RESET'|socat - $modem|awk NR==4)
 if [[ "$AT" = "OK"* ]]; then
 	echo -e "Modem$G Restart$ak"
 	break
@@ -107,7 +107,7 @@ done
 
 CUSTOM(){
 echo -e $Cus
-echo -e $Cus|atinout - $modem -
+echo -e $Cus|socat - $modem
 }
 
 En(){
@@ -336,7 +336,22 @@ _network(){
 			;;
 	esac
 }
+_read_sms(){
+	while true; do
+		if [ "$(echo -e "AT+CMGF=1"|socat - $modem|grep "OK")" == "OK" ]; then
+			echo -e "${G}Succes${AK} AT+CMGF=1"; sleep 1
+			echo -e "AT+CMGL=\"ALL\""
+			echo -e "AT+CMGL=\"ALL\""|socat - $modem
+			break
+		else
+			echo -e "${R}Failure${AK} AT+CMGF=1"
+		fi
+	done
+}
 case $1 in
+	read-sms)
+		_read_sms;exit
+		;;
 	network)
 		_network;exit
 		;;
