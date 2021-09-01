@@ -2,13 +2,20 @@
 modem='/dev/ttyUSB2'
 _CONFIG='/etc/config/sierra'
 _SIERRA='\/root\/sierra\/sierra.sh'
+_SIERRA1=${_SIERRA//\\/}
 R='\e[31;1m' #RED
 G='\e[32;1m' #GREEN
 ak='\e[0m'
 AK='\e[0m'
+_auuto=00
+_4g=06
+_3g=01
 Cus=$2
 _ke2=$2
 INTER='wwan0'
+_COMMAND(){
+echo -e "$_MOD"|socat - $modem
+}
 
 APN(){
 	echo -e "AT+CGDCONT=1,\"IP\",\"$Cus\""|atinout - $modem -
@@ -58,14 +65,14 @@ CONNECTION(){
 	done
 	}
 	
-AUTO(){
+_AUTO(){
 	for (( ; ; )); do
 	ceksi=$(lsusb -t|grep sierra)
 	if [ -n "$ceksi" ]; then
 	echo -e "Sierra$G Terdeteksi$ak"
 		cekip=$(ifconfig wwan0|grep 'inet addr')
 		if [ -z "$cekip" ]; then
-			START
+			$0 con
 		fi
 	else
 		echo -e "Sierra$R Tidak Terdeteksi$ak"
@@ -189,12 +196,6 @@ stat_apn(){
         $0 cus 'AT+CGDCONT?'
 }
 
-LTE(){
-	RESET; \
-	sleep 35; \
-	CONNECTION
-	}
-
 _LISTROUT(){
   _TOTAL=$(grep server $_CONFIG|awk -F '=' '{print $1}')
   _TOTALNam=$(grep 'server' $_CONFIG|cut -b 7- -|cut -d '=' -f 1 -)
@@ -296,13 +297,52 @@ _ROUT(){
     ;;
    esac
 }
+_mode_network(){
+	while true; do
+		if [ -n "$($_lock|grep OK)" ]; then
+			echo -e "${G}Succes${AK} $_MODE"; break
+		else
+			echo -e "${R}Failure${AK} $_MODE"; exit
+		fi
+	done
+}
+_network(){
+	_C0m="$_COMMAND"
+	echo -e "1. Mode AUTO"
+	echo -e "2. Lock 4G/LTE"
+	echo -e "3. Lock 3G/HSDPA"
+	read -p "Select number = " pil123
+	case $pil123 in
+		3)
+			_MODE='Lock 3G'
+			_MOD="AT!SELRAT=$_3g"
+			_lock="$_SIERRA1 cus $_MOD"
+			_mode_network
+			;;
+		2)
+			_MODE='Lock 4G'
+			_MOD="AT!SELRAT=$_4g"
+			_lock="$_SIERRA1 cus $_MOD"
+			_mode_network
+			;;
+		1)
+			_MODE='Auto mode'
+			_MOD="AT!SELRAT=$_auuto"
+			_lock="$_SIERRA1 cus $_MOD"
+			_mode_network
+			;;
+		*)
+			_network
+			;;
+	esac
+}
 case $1 in
-rout)
-  _ROUT;exit
-  ;;
-lte)
-	LTE;exit
-	;;
+	network)
+		_network;exit
+		;;
+	rout)
+  		_ROUT;exit
+		;;
         stat-apn)
                 stat_apn;exit
                 ;;
@@ -321,47 +361,50 @@ lte)
 	enabled)
 		ENABLED;exit
 		;;
-con)
-	CONNECTION;_ROUT;exit
-	;;
-dis)
-	STOP;exit
-	;;
-res)
-	RESET;sleep 5; \
-	for (( ; ; )); do \
-	cek=$(ifconfig|grep wwan0|awk '{print$1}')
-	if [[ "$cek" == "wwan0"* ]]; then
-	CONNECTION;_ROUT;exit
-	break
-	fi
-	done
-	;;
-reboot)
-	RESET;exit
-	;;
-cus)
-	CUSTOM;exit
-	;;
-stat)
-	STATUS;exit
-	;;
-auto)
-	AUTO;exit
-	;;
+	con)
+		CONNECTION;_ROUT;exit
+		;;
+	dis)
+		STOP;exit
+		;;
+	res)
+		RESET;sleep 5; \
+		for (( ; ; )); do \
+		cek=$(ifconfig|grep wwan0|awk '{print$1}')
+		if [[ "$cek" == "wwan0"* ]]; then
+		CONNECTION;_ROUT;exit
+		break
+		fi
+		done
+		;;
+	reboot)
+		RESET;exit
+		;;
+	cus)
+		CUSTOM;exit
+		;;
+	stat)
+		STATUS;exit
+		;;
+	auto)
+		_AUTO;exit
+		;;
 esac
 
 echo -e "Syntax: $0 [command]
 
 Available commands:
-        con		Start Sierra
-	catat		Add or View Note list IP
-        dis		Stop Sierra
-        res	        Restart Sierra
-	stat-apn	Status Apn
-	cus		Custom AT Command
-	auto		Auto detect Sierra
-	apn		Change APN (sierra apn internet)
-        enable          Enable Sierra autostart
-        disable         Disable Sierra autostart
-        enabled         Check if Sierra is started on boot"
+        ${G}con${AK}		Connect data 
+        ${G}dis${AK}		Disconnect data 
+	${G}network${AK}		Select Network mode (auto ,4g ,3g)
+        ${G}res${AK}	        Restart Sierra with connect data 
+	${G}reboot${AK}		Restart Sierra only
+	${G}catat${AK}		Add or View Note list IP
+	${G}stat-apn${AK}	Status Apn
+	${G}cus${AK}		Custom AT Command
+	${G}auto${AK}		Auto connect Sierra
+	${G}apn${AK}		Change APN ($0 apn internet)
+	${G}rout${AK}		Routing menu
+        ${G}enable${AK}          Enable Sierra autostart
+        ${G}disable${AK}         Disable Sierra autostart
+        ${G}enabled${AK}         Check if Sierra is started on boot"
