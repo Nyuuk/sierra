@@ -416,6 +416,7 @@ Available commands:
 	${G}reboot${AK}		Restart Sierra only
 	${G}catat${AK}		Add or View Note list IP
 	${G}stat-apn${AK}	Status Apn
+	${G}read-sms${AK}	Read SMS
 	${G}cus${AK}		Custom AT Command
 	${G}auto${AK}		Auto connect Sierra
 	${G}apn${AK}		Change APN ($0 apn internet)
